@@ -30,7 +30,6 @@
   </head>
   <body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center p-4">
 
-    <!-- Auth View -->
     <div id="auth-view" class="max-w-md w-full glass-card p-8 rounded-3xl fade-in hidden">
       <h2 id="auth-title" class="text-3xl font-bold text-center mb-6 text-emerald-400">Login</h2>
       <form id="auth-form" class="space-y-4">
@@ -135,13 +134,12 @@
       </div>
     </div>
 
-    <!-- My Bookings Modal -->
+
     <div id="bookings-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
       <div class="glass-card max-w-lg w-full p-8 rounded-3xl fade-in relative">
         <button onclick="closeBookings()" class="absolute top-6 right-6 text-slate-400 hover:text-white pb-2 text-2xl leading-none">&times;</button>
         <h2 class="text-3xl font-bold mb-6 text-cyan-400">My Bookings</h2>
         <div id="bookings-list" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-           <!-- Dynamic content -->
         </div>
       </div>
     </div>
@@ -152,7 +150,6 @@
       const authStore = window.sessionStorage;
 
       document.addEventListener('DOMContentLoaded', () => {
-        // Keep auth isolated per browser tab.
         const token = authStore.getItem("token");
         if (token) {
           document.getElementById('selection-view').classList.remove('hidden');

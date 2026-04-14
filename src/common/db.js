@@ -7,15 +7,17 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const pool = new pg.Pool({
-  host: "localhost",
-  port: 5432,
+  host: process.env.DB_HOST || "localhost",
+  port: process.env.DB_PORT || 5432,
   user: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
   database: process.env.DATABASE,
   max: 20,
   connectionTimeoutMillis: 0,
   idleTimeoutMillis: 0,
+  ssl: process.env.DB_HOST ? { rejectUnauthorized: false } : false
 });
+
 
 
 async function initDB() {

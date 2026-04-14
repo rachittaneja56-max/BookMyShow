@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ChaiCode Cinema - Book Your Ticket</title>
+    <title>Rachit's Cinema </title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap");
@@ -19,8 +19,6 @@
         border: 1px solid rgba(255, 255, 255, 0.1);
       }
       .hidden { display: none; }
-      
-      /* Animation for smooth transition */
       .fade-in {
         animation: fadeIn 0.5s ease-in forwards;
       }
@@ -32,9 +30,45 @@
   </head>
   <body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center p-4">
 
-    <div id="selection-view" class="max-w-4xl w-full text-center fade-in">
+    <!-- Auth View -->
+    <div id="auth-view" class="max-w-md w-full glass-card p-8 rounded-3xl fade-in hidden">
+      <h2 id="auth-title" class="text-3xl font-bold text-center mb-6 text-emerald-400">Login</h2>
+      <form id="auth-form" class="space-y-4">
+        <div id="name-field" class="hidden">
+          <label class="block text-slate-300 mb-1">Name</label>
+          <input type="text" id="auth-name" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500" placeholder="John Doe">
+        </div>
+        <div>
+          <label class="block text-slate-300 mb-1">Email</label>
+          <input type="email" id="auth-email" required class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500" placeholder="john@example.com">
+        </div>
+        <div>
+          <label class="block text-slate-300 mb-1">Password</label>
+          <input type="password" id="auth-password" required class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500" placeholder="••••••••">
+        </div>
+        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-lg transition shadow-lg hover:shadow-emerald-500/20">
+          Submit
+        </button>
+      </form>
+      <div class="mt-4 text-center">
+        <button type="button" onclick="toggleAuthMode()" class="text-slate-400 hover:text-white transition text-sm">
+          Need an account? <span id="auth-toggle-text" class="text-cyan-400 underline">Register</span>
+        </button>
+        <div id="auth-error" class="text-rose-400 text-sm mt-3 hidden"></div>
+      </div>
+    </div>
+
+    <div id="selection-view" class="max-w-4xl w-full text-center fade-in hidden">
+      <div class="flex justify-end mb-4 gap-4">
+        <button onclick="fetchMyBookings()" class="text-slate-400 hover:text-cyan-400 transition text-sm px-4 py-2 border border-slate-700 rounded-lg hover:border-cyan-500/50">
+          My Bookings
+        </button>
+        <button onclick="handleLogout()" class="text-slate-400 hover:text-rose-400 transition text-sm px-4 py-2 border border-slate-700 rounded-lg hover:border-rose-500/50">
+          Logout
+        </button>
+      </div>
       <h1 class="text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
-        ChaiCode Cinema
+        Rachit's Cinema
       </h1>
       <p class="text-slate-400 text-xl mb-12">Select a movie to book your seats</p>
 
@@ -44,7 +78,7 @@
           <div class="h-48 w-full bg-blue-900/30 rounded-2xl mb-6 flex items-center justify-center border border-blue-500/20">
              <span class="text-6xl group-hover:scale-110 transition-transform">🛡️</span>
           </div>
-          <h2 class="text-2xl font-bold text-white mb-2">Avengers: Endgame</h2>
+          <h2 class="text-2xl font-bold text-white mb-2">Avengers Endgame</h2>
           <p class="text-slate-400">The epic conclusion to the Infinity Saga.</p>
         </div>
 
@@ -54,7 +88,7 @@
              <span class="text-6xl group-hover:scale-110 transition-transform">🔥</span>
           </div>
           <h2 class="text-2xl font-bold text-white mb-2">Dhurandhar</h2>
-          <p class="text-slate-400">High-octane desi action like never before.</p>
+          <p class="text-slate-400">Peak desi action like never before.</p>
         </div>
       </div>
     </div>
@@ -66,9 +100,14 @@
           <button onclick="goBack()" class="text-slate-400 hover:text-white transition flex items-center gap-2">
             ← Change Movie
           </button>
-          <div class="text-center">
-            <h2 id="display-title" class="text-4xl font-bold text-emerald-400"></h2>
-            <p id="display-desc" class="text-slate-400 italic"></p>
+          <div class="text-center w-full max-w-4xl mx-auto">
+            <div class="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-emerald-500/30 bg-emerald-900/20 text-emerald-400 font-semibold tracking-wide mb-6">
+              <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+              NOW SHOWING
+            </div>
+            <h2 id="display-title" class="text-4xl md:text-7xl font-extrabold text-cyan-400 leading-tight drop-shadow-[0_0_24px_rgba(34,211,238,0.25)]"></h2>
+            <p id="display-desc" class="text-slate-400 italic text-lg md:text-4 mt-3"></p>
+            <p id="display-meta" class="text-slate-500 mt-6 text-base md:text-2 flex flex-wrap justify-center gap-4 md:gap-6"></p>
           </div>
           <div class="w-24"></div> </div>
 
@@ -90,23 +129,176 @@
           <p class="text-center text-[10px] tracking-[0.5em] text-cyan-500/50 mt-4 uppercase">Cinema Screen This Way</p>
         </div>
 
-        <div class="overflow-x-auto pb-4">
+        <div class="overflow-x-auto pb-4 pt-12">
           <table id="tbl" class="border-separate border-spacing-3 md:border-spacing-4 mx-auto"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- My Bookings Modal -->
+    <div id="bookings-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+      <div class="glass-card max-w-lg w-full p-8 rounded-3xl fade-in relative">
+        <button onclick="closeBookings()" class="absolute top-6 right-6 text-slate-400 hover:text-white pb-2 text-2xl leading-none">&times;</button>
+        <h2 class="text-3xl font-bold mb-6 text-cyan-400">My Bookings</h2>
+        <div id="bookings-list" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+           <!-- Dynamic content -->
         </div>
       </div>
     </div>
 
     <script>
       let currentMovieId = null;
+      let isLoginMode = true;
+      const authStore = window.sessionStorage;
+
+      document.addEventListener('DOMContentLoaded', () => {
+        // Keep auth isolated per browser tab.
+        const token = authStore.getItem("token");
+        if (token) {
+          document.getElementById('selection-view').classList.remove('hidden');
+        } else {
+          document.getElementById('auth-view').classList.remove('hidden');
+        }
+      });
+
+      function handleLogout() {
+      authStore.removeItem("token");
+      authStore.removeItem("username");
+      authStore.removeItem("user");
+      window.location.reload();
+    }
+
+    async function fetchMyBookings() {
+      const token = authStore.getItem("token");
+      const list = document.getElementById("bookings-list");
+      list.innerHTML = '<p class="text-slate-400">Loading...</p>';
+      
+      const modal = document.getElementById('bookings-modal');
+      modal.classList.remove('hidden');
+
+      try {
+        const res = await fetch('/api/my-bookings', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (res.status === 401 || res.status === 403) {
+          alert("Session expired.");
+          handleLogout();
+          return;
+        }
+        
+        const seats = await res.json();
+        
+        if (seats.length === 0) {
+          list.innerHTML = '<p class="text-slate-400 text-center py-8">No tickets booked yet.</p>';
+          return;
+        }
+        
+        list.innerHTML = seats.map(s => `
+          <div class="bg-slate-900/50 border border-slate-700 p-4 rounded-xl flex justify-between items-center group hover:border-cyan-500/50 transition">
+            <div>
+              <h3 class="text-white font-bold text-lg">${s.title}</h3>
+              <p class="text-emerald-400 text-sm">Seat ${s.seat_number}</p>
+            </div>
+            <div class="h-10 w-10 flex-shrink-0 rounded-full bg-cyan-900/30 border border-cyan-500/20 flex items-center justify-center group-hover:scale-110 transition text-lg">
+              🎫
+            </div>
+          </div>
+        `).join("");
+      } catch (err) {
+        list.innerHTML = '<p class="text-rose-400">Failed to load bookings.</p>';
+      }
+    }
+
+    function closeBookings() {
+      document.getElementById('bookings-modal').classList.add('hidden');
+    }
+
+      function toggleAuthMode() {
+        isLoginMode = !isLoginMode;
+        document.getElementById('auth-title').innerText = isLoginMode ? "Login" : "Register";
+        document.getElementById('auth-toggle-text').innerText = isLoginMode ? "Register" : "Login";
+        
+        const nameField = document.getElementById('name-field');
+        const nameInput = document.getElementById('auth-name');
+        const errDiv = document.getElementById('auth-error');
+        
+        errDiv.classList.add('hidden');
+        errDiv.classList.remove('text-emerald-400');
+        errDiv.classList.add('text-rose-400');
+
+        if (isLoginMode) {
+          nameField.classList.add('hidden');
+          nameInput.removeAttribute('required');
+        } else {
+          nameField.classList.remove('hidden');
+          nameInput.setAttribute('required', 'true');
+        }
+
+        document.getElementById('auth-name').value = '';
+        document.getElementById('auth-email').value = '';
+        document.getElementById('auth-password').value = '';
+      }
+
+      document.getElementById('auth-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errDiv = document.getElementById('auth-error');
+        errDiv.classList.add('hidden');
+        errDiv.classList.remove('text-emerald-400');
+        errDiv.classList.add('text-rose-400');
+        
+        const email = document.getElementById('auth-email').value;
+        const password = document.getElementById('auth-password').value;
+        const name = document.getElementById('auth-name').value;
+
+        const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/register';
+        const body = isLoginMode ? { email, password } : { name, email, password };
+
+        try {
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          const data = await res.json();
+          const payload = data?.data || {};
+          
+          if (!res.ok) {
+            errDiv.innerText = data.message || data.error || 'Authentication failed';
+            errDiv.classList.remove('hidden');
+            return;
+          }
+
+          if (!payload?.token || !payload?.user) {
+            errDiv.innerText = 'Invalid authentication response.';
+            errDiv.classList.remove('hidden');
+            return;
+          }
+
+          authStore.setItem("token", payload.token);
+          authStore.setItem("username", payload.user.name);
+          authStore.setItem("user", JSON.stringify(payload.user));
+          document.getElementById('auth-view').classList.add('hidden');
+          document.getElementById('selection-view').classList.remove('hidden');
+        } catch (err) {
+          errDiv.innerText = 'Network error. Please try again.';
+          errDiv.classList.remove('hidden');
+        }
+      });
 
       function initTheater(id, title, desc) {
         currentMovieId = id;
+        const movieMeta = {
+          1: { rating: "8.6", genre: "Sci-Fi / Action", duration: "3h 1m", time: "8:30 PM" },
+          2: { rating: "8.4", genre: "Action / Thriller", duration: "2h 35m", time: "7:00 PM" },
+        };
+        const meta = movieMeta[id] || { rating: "8.0", genre: "Drama", duration: "2h", time: "9:00 PM" };
         
-        // UI Updates
+    
         document.getElementById('display-title').innerText = title;
         document.getElementById('display-desc').innerText = desc;
+        document.getElementById('display-meta').innerText = `★ ${meta.rating}  •  ${meta.genre}  •  ${meta.duration}  •  ${meta.time}`;
         
-        // View Switching
         document.getElementById('selection-view').classList.add('hidden');
         document.getElementById('theater-view').classList.remove('hidden');
         document.getElementById('theater-view').classList.add('fade-in');
@@ -127,9 +319,9 @@
         try {
           const res = await fetch(`/seats?movie_id=${currentMovieId}`);
           const seats = await res.json();
-          seats.sort((a, b) => a.id - b.id);
+          seats.sort((a, b) => Number(a.seat_number) - Number(b.seat_number));
           
-          tbl.innerHTML = ""; // Clear loader
+          tbl.innerHTML = ""; 
           let tr;
 
           seats.forEach((seat, index) => {
@@ -146,8 +338,8 @@
               td.className = `${baseClasses} bg-rose-500/10 text-rose-500/40 border border-rose-500/20 cursor-not-allowed`;
               td.innerHTML = `
                 <span>${seatLabel}</span>
-                <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1 bg-slate-900 border border-slate-700 text-xs text-slate-300 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
-                  Booked by: ${seat.name}
+                <div class="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1 bg-slate-800 shadow-2xl border border-slate-600 text-xs text-slate-200 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-[100]">
+                  🎟️ Booked by: ${seat.name && seat.name.trim() !== '' ? seat.name : 'Anonymous'}
                 </div>
               `;
             } else {
@@ -155,17 +347,36 @@
               td.innerHTML = `<span>${seatLabel}</span>`;
               
               td.addEventListener("click", async () => {
-                const name = prompt(`Book Seat ${seatLabel} for:`);
-                if (!name) return;
+                const token = authStore.getItem("token");
+                const username = authStore.getItem("username");
+                if (!token || !username) {
+                  handleLogout();
+                  return;
+                }
 
-                const response = await fetch(`/${seat.id}/${name}`, { method: "PUT" });
-                const result = await response.json();
+                try {
+                  const response = await fetch(`/${seat.id}/${encodeURIComponent(username)}`, { 
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                  });
+                  
+                  if (response.status === 401 || response.status === 403) {
+                    alert("Session expired. Please login again.");
+                    handleLogout();
+                    return;
+                  }
 
-                if (result.error) {
-                  alert("Already booked!");
-                } else {
-                  alert("Ticket Confirmed!");
-                  renderSeats(); // Refresh grid
+                  const result = await response.json();
+
+                  if (result.error) {
+                    alert(result.error);
+                  } else {
+                    alert("Ticket Confirmed!");
+                    renderSeats(); 
+                  }
+                } catch (err) {
+                  console.error(err);
+                  alert("Failed to confirm ticket.");
                 }
               });
             }

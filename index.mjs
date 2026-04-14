@@ -95,6 +95,10 @@ app.use((err, req, res, next) => {
   });
 });
 
+app.get("/ping", (req, res) => {
+  res.status(200).send("pong");
+});
+
 async function startServer() {
   try {
     await initDB();

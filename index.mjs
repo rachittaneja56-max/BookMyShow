@@ -21,14 +21,11 @@ app.get("/", (req, res) => {
 app.get("/seats", async (req, res) => {
   try {
     const movie_id = req.query.movie_id || 1;
-    
-    // RESET ON RELOAD LOGIC: Check if all seats are booked for this movie
     const checkSql = "SELECT COUNT(*) FROM seats WHERE movie_id = $1 AND isbooked = FALSE";
     const checkResult = await pool.query(checkSql, [movie_id]);
     const availableCount = parseInt(checkResult.rows[0].count);
 
     if (availableCount === 0) {
-      // Theater is full, reset it for a new round
       await pool.query("UPDATE seats SET isbooked = FALSE, name = NULL, user_id = NULL WHERE movie_id = $1", [movie_id]);
     }
 
@@ -88,8 +85,6 @@ app.put("/:id/:name", authenticate, async (req, res) => {
     const updateResult = await conn.query(sqlU, [id, name, userId]);
     const movieId = result.rows[0].movie_id;
     const seatNumber = result.rows[0].seat_number;
-
-    // Create a permanent record in the bookings table
     await conn.query(
       "INSERT INTO bookings (user_id, movie_id, seat_number) VALUES ($1, $2, $3)",
       [userId, movieId, seatNumber]
@@ -106,22 +101,7 @@ app.put("/:id/:name", authenticate, async (req, res) => {
   }
 });
 
-app.get("/reset", async (req, res) => {
-  const conn = await pool.connect();
-  try {
-    await conn.query("BEGIN");
-    await conn.query("UPDATE seats SET isbooked = FALSE, name = NULL, user_id = NULL");
-    await conn.query("DELETE FROM bookings"); 
-    await conn.query("COMMIT");
-    res.json({ message: "Success! All seats and history are now cleared. 🍿" });
-  } catch (ex) {
-    await conn.query("ROLLBACK");
-    console.error("Reset error:", ex.message);
-    res.status(500).json({ error: "Failed to reset seats" });
-  } finally {
-    conn.release();
-  }
-});
+
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;

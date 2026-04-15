@@ -219,6 +219,32 @@
         </div>
     </div>
 
+    <div id="payment-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="app-card max-w-sm w-full p-8 rounded-xl relative shadow-2xl fade-in text-center bg-[#111111] border border-white/10">
+            <h2 class="text-2xl font-bold text-white mb-2">Processing Payment</h2>
+            <p class="text-neutral-400 text-sm mb-6">Securing seat <span id="payment-seat-number" class="text-white font-bold"></span>...</p>
+            
+            <div class="flex justify-center mb-8 mt-4">
+                <div class="relative w-24 h-24">
+                    <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                        <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"></circle>
+                        <circle id="payment-timer-circle" cx="50" cy="50" r="45" fill="none" stroke="#D92344" stroke-width="8" stroke-dasharray="283" stroke-dashoffset="0" class="transition-all duration-1000 linear"></circle>
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span id="payment-timer-text" class="text-2xl font-black text-white">30</span>
+                    </div>
+                </div>
+            </div>
+            
+            <button type="button" id="btn-cancel-payment" class="w-full bg-[#1A1A1A] border border-white/10 hover:bg-rose-500/10 hover:text-rose-500 hover:border-rose-500 text-neutral-300 font-bold py-3.5 rounded-md transition-colors text-sm uppercase tracking-widest">
+                Cancel Payment
+            </button>
+            <button type="button" id="btn-pay-now" class="w-full mt-3 bg-[#D92344] hover:bg-[#b01c37] text-white font-bold py-3.5 rounded-md transition-colors text-sm uppercase tracking-widest">
+                Mock Pay Now
+            </button>
+        </div>
+    </div>
+
     <div id="bookings-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="app-card max-w-lg w-full p-8 md:p-10 rounded-xl relative max-h-[85vh] flex flex-col shadow-2xl fade-in">
             <div class="flex justify-between items-center mb-8 border-b border-white/10 pb-5">
@@ -245,6 +271,58 @@
         let toastHideTimer = null;
         let localAvailableSeats = 0;
         let localTotalSeats = 0;
+        let paymentTimerInterval = null;
+
+        function simulatePayment(seatLabel, onComplete, onCancel) {
+            const modal = document.getElementById('payment-modal');
+            const seatNumberEl = document.getElementById('payment-seat-number');
+            const timerText = document.getElementById('payment-timer-text');
+            const timerCircle = document.getElementById('payment-timer-circle');
+            const btnCancel = document.getElementById('btn-cancel-payment');
+            const btnPayNow = document.getElementById('btn-pay-now');
+            
+            modal.classList.remove('hidden');
+            seatNumberEl.textContent = seatLabel;
+            
+            let timeLeft = 30;
+            const totalDash = 283;
+            timerText.innerText = timeLeft;
+            timerCircle.style.strokeDashoffset = "0";
+
+            const cleanup = () => {
+                clearInterval(paymentTimerInterval);
+                modal.classList.add('hidden');
+                btnCancel.removeEventListener('click', handleCancel);
+                btnPayNow.removeEventListener('click', handleComplete);
+            };
+
+            const handleCancel = () => {
+                cleanup();
+                if (onCancel) onCancel();
+            };
+
+            const handleComplete = () => {
+                cleanup();
+                if (onComplete) onComplete();
+            };
+
+            btnCancel.addEventListener('click', handleCancel);
+            btnPayNow.addEventListener('click', handleComplete);
+
+            paymentTimerInterval = setInterval(() => {
+                timeLeft--;
+                timerText.innerText = timeLeft;
+                // Add a small trick to prevent visual lag
+                requestAnimationFrame(() => {
+                    const offset = totalDash - (timeLeft / 30) * totalDash;
+                    timerCircle.style.strokeDashoffset = offset;
+                });
+
+                if (timeLeft <= 0) {
+                    handleComplete();
+                }
+            }, 1000);
+        }
 
         function updateAvailabilityDisplay(available, total) {
             const statusEl = document.getElementById('availability-status');
@@ -472,34 +550,53 @@
                                 openAuthModal();
                                 return;
                             }
-                            try {
-                                const response = await fetch(`/${seat.id}/${encodeURIComponent(username)}`, { 
-                                    method: 'PUT',
-                                    headers: { 'Authorization': `Bearer ${token}` }
-                                });
-                                if (response.status === 401 || response.status === 403) {
-                                    showToast('Session expired. Please sign in again.', 'error');
-                                    handleLogout();
-                                    return;
+
+                            // Temporarily visually hold the seat
+                            const originalClass = td.className;
+                            td.className = `${baseClasses} bg-amber-500/20 text-amber-500 border border-amber-500/50`;
+                            td.style.pointerEvents = 'none';
+
+                            simulatePayment(seatLabel, async () => {
+                                try {
+                                    const response = await fetch(`/${seat.id}/${encodeURIComponent(username)}`, { 
+                                        method: 'PUT',
+                                        headers: { 'Authorization': `Bearer ${token}` }
+                                    });
+                                    if (response.status === 401 || response.status === 403) {
+                                        showToast('Session expired. Please sign in again.', 'error');
+                                        handleLogout();
+                                        td.className = originalClass;
+                                        td.style.pointerEvents = 'auto';
+                                        return;
+                                    }
+                                    const result = await response.json();
+                                     if (result.error) {
+                                        showToast(result.error, 'error');
+                                        td.className = originalClass;
+                                        td.style.pointerEvents = 'auto';
+                                    } else {
+                                        showToast(`Seat ${seatLabel} successfully booked!`, 'success');
+                                        
+                                        // Manual UI update to prevent full reload/reset
+                                        td.className = `${baseClasses} bg-[#1f1f1f] text-neutral-600 border-0 cursor-not-allowed`;
+                                        td.innerHTML = `<span>${seatLabel}</span>`;
+                                        
+                                        // Update availability counter locally
+                                        localAvailableSeats--;
+                                        updateAvailabilityDisplay(localAvailableSeats, localTotalSeats);
+                                    }
+                                } catch (err) {
+                                    console.error(err);
+                                    showToast('Network error while booking. Please try again.', 'error');
+                                    td.className = originalClass;
+                                    td.style.pointerEvents = 'auto';
                                 }
-                                const result = await response.json();
-                                 if (result.error) {
-                                    showToast(result.error, 'error');
-                                } else {
-                                    showToast(`Seat ${seatLabel} successfully booked!`, 'success');
-                                    
-                                    // Manual UI update to prevent full reload/reset
-                                    td.className = `${baseClasses} bg-[#1f1f1f] text-neutral-600 border-0 cursor-not-allowed`;
-                                    td.innerHTML = `<span>${seatLabel}</span>`;
-                                    
-                                    // Update availability counter locally
-                                    localAvailableSeats--;
-                                    updateAvailabilityDisplay(localAvailableSeats, localTotalSeats);
-                                }
-                            } catch (err) {
-                                console.error(err);
-                                showToast('Network error while booking. Please try again.', 'error');
-                            }
+                            }, () => {
+                                // On Cancel payment
+                                showToast(`Payment cancelled for Seat ${seatLabel}.`, 'error');
+                                td.className = originalClass;
+                                td.style.pointerEvents = 'auto';
+                            });
                         });
                     }
                     tr.appendChild(td);

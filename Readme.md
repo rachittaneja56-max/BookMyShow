@@ -1,52 +1,48 @@
-# Book My Ticket - Hackathon Submission
+# Movie Booking System
 
+This is a simple project I built for a hackathon. It is a movie ticket booking site where you can pick a movie and choose your seats. 
 
-I built upon the original starter code: https://github.com/chaicodehq/book-my-ticket by restructuring it into a cleaner, more modular architecture. Instead of putting everything in a single file, the logic is split across controllers, services, and middleware.
+I took the basic idea and made it better by organizing the code properly and adding features like user accounts and a history of your bookings.
 
-Here is a quick rundown of the main features I added:
+## Main Features
 
-- **JWT Authentication:** Users can register and log in. Passwords are securely hashed using bcryptjs, and sessions are managed via JSON Web Tokens.
-- **Protected Booking Flow:** The primary booking endpoint is secured. Only authenticated users can lock in a seat.
-- **Concurrency Control:** When booking a seat, the system uses Postgres row-level locks (`FOR UPDATE`) inside a database transaction. This ensures that if two users try to book the exact same seat at the exact same millisecond, it won't result in a double booking.
-- **Relational Data:** The database schema has been normalized. There are now separate tables for users, movies, and seats, all linked together properly with foreign keys.
-- **Frontend:** I also created a simple single-page application using vanilla HTML, JS, and TailwindCSS. It lets you register, log in, view available seats for mocked movies, book tickets, and see an overview of your booking history.
+- **Accounts and Login:** You can create an account and log in. Your password is encrypted so it is safe.
+- **Booking Tickets:** You must be logged in to book a seat. The system is designed to handle multiple people booking at the same time without any errors.
+- **Theater Reset:** To make it easy to test, the theater seats reset automatically when they are all full. If you fill up the theater and then refresh the page, you will see it is empty and ready for new bookings.
+- **Booking History:** Even when the theater resets, your tickets are not lost. You can always go to the "My Bookings" section to see everything you have booked in the past.
+- **Clean Design:** The site looks modern and works well on both computers and phones.
 
-## Project Structure
+## How to set this up on your computer
 
-The codebase is organized intuitively to separate concerns:
-
-- `index.mjs` is the main entry point that sets up the Express server.
-- `index.html` contains the frontend styling and logic.
-- `src/common` holds shared logic like database connections, initialization scripts, JWT utilities, and custom error handling.
-- `src/modules/auth` contains the authentication flow, cleanly structured using the Controller -> Service pattern along with data validation DTOs.
-
-## How to run it locally
-
-If you want to spin this up on your local machine, here are the steps:
-
-1. Clone this repository and navigate into the folder.
-2. Run `npm install` to pull down the dependencies.
-3. Make sure you have PostgreSQL installed and running locally. You will need to manually create an empty database via pgAdmin or psql (for example, named `bookmyshow`).
-4. Create a `.env` file in the root of the project. You'll need to configure it with your database credentials. It should look like this:
+1. Download the code or clone the repository.
+2. Open your terminal in the project folder and run `npm install` to get the necessary files.
+3. You need to have PostgreSQL installed. Create a database called `bookmyshow`.
+4. Create a file named `.env` in the main folder. Copy and paste the following, but use your own database password:
 
 ```env
 DATABASE=bookmyshow
 DB_USERNAME=postgres
-DB_PASSWORD=your_password
-JWT_SECRET=some_random_secret_string
+DB_PASSWORD=your_password_here
+JWT_SECRET=any_random_words
 ```
 
-5. Run `node index.mjs` to start the server.
+5. Start the server by running `node index.mjs`.
 
-When the server starts up, it will automatically connect to Postgres, create the necessary tables, and seed the mock movie data for you. It listens on port 8080 by default. You can open `http://localhost:8080` in your browser to check out the frontend interface.
+Once it starts, it will set up the database for you. You can then go to `http://localhost:8080` in your browser to use the app.
 
-## API Endpoints Overview
+## Project Structure
 
-If you are just testing the backend logic via Postman, here are the main endpoints available:
+- `index.mjs`: This is the main file that runs the server.
+- `index.html`: This is the frontend part that you see in the browser.
+- `src/common`: This folder contains shared tools like database settings and security checks.
+- `src/modules/auth`: This folder handles everything related to user accounts like signing up and logging in.
 
-- `GET /` - Serves the frontend UI.
-- `GET /seats?movie_id={id}` - Public endpoint that returns all seats and their availability status for a given movie.
-- `POST /api/auth/register` - Registers a new user. The JSON body requires `name`, `email`, and `password`.
-- `POST /api/auth/login` - Authenticates an existing user and returns a JWT. The JSON body requires `email` and `password`.
-- `PUT /:id/:name` - Books a specific seat. This requires a valid JWT sent in the `Authorization: Bearer <token>` header.
-- `GET /api/my-bookings` - Returns all active seat bookings specifically belonging to the authenticated user. This also requires a valid JWT header.
+## List of API Endpoints
+
+- `GET /`: Shows the website.
+- `GET /seats`: Gets the current list of seats for a movie.
+- `POST /api/auth/register`: Create a new account.
+- `POST /api/auth/login`: Log into an existing account.
+- `PUT /:id/:name`: Book a seat (requires login).
+- `GET /api/my-bookings`: See your own booking history (requires login).
+- `GET /reset`: A way to manually clear all seats and history if needed.

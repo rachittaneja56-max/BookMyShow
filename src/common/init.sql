@@ -20,6 +20,14 @@ CREATE TABLE IF NOT EXISTS seats (
   user_id INTEGER REFERENCES users(id) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS bookings (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  movie_id INTEGER NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
+  seat_number INTEGER NOT NULL,
+  booked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 INSERT INTO movies (title)
 SELECT 'Avengers: Endgame'
 WHERE NOT EXISTS (SELECT 1 FROM movies WHERE title = 'Avengers: Endgame');
@@ -47,11 +55,3 @@ WHERE m.title = 'Dhurandhar'
     SELECT 1 FROM seats WHERE movie_id = m.id AND seat_number = s.n
   );
 
-UPDATE seats
-SET isbooked = FALSE, name = NULL, user_id = NULL
-WHERE movie_id IN (
-    SELECT movie_id
-    FROM seats
-    GROUP BY movie_id
-    HAVING COUNT(*) FILTER (WHERE isbooked = FALSE) = 0
-);

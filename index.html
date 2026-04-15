@@ -148,7 +148,8 @@
                     <div class="flex flex-wrap justify-center md:justify-start gap-2 mb-4" id="display-tags">
                         </div>
                     <h2 id="display-title" class="text-4xl md:text-5xl font-black tracking-tight text-white mb-3 leading-tight"></h2>
-                    <p id="display-desc" class="text-neutral-400 text-sm md:text-base max-w-2xl"></p>
+                    <p id="display-desc" class="text-neutral-400 text-sm md:text-base max-w-2xl mb-6"></p>
+                    <div id="availability-status" class="inline-block"></div>
                 </div>
             </div>
 
@@ -242,6 +243,33 @@
         let isLoginMode = true;
         const authStore = window.sessionStorage;
         let toastHideTimer = null;
+        let localAvailableSeats = 0;
+        let localTotalSeats = 0;
+
+        function updateAvailabilityDisplay(available, total) {
+            const statusEl = document.getElementById('availability-status');
+            if (!statusEl) return;
+            
+            if (available === 0) {
+                statusEl.innerHTML = `
+                    <div class="flex items-center gap-2 px-4 py-2 bg-rose-500/10 border border-rose-500/20 rounded-full text-rose-500 font-bold text-sm animate-pulse">
+                        <span class="w-2 h-2 bg-rose-500 rounded-full"></span>
+                        SOLD OUT — ALL SEATS BOOKED
+                    </div>
+                `;
+            } else {
+                const percentage = Math.round((available / total) * 100);
+                let colorClass = percentage < 20 ? 'text-amber-500 border-amber-500/20 bg-amber-500/10' : 'text-emerald-500 border-emerald-500/20 bg-emerald-500/10';
+                let dotClass = percentage < 20 ? 'bg-amber-500' : 'bg-emerald-500';
+                
+                statusEl.innerHTML = `
+                    <div class="flex items-center gap-2 px-4 py-2 ${colorClass} border rounded-full font-bold text-sm">
+                        <span class="w-2 h-2 ${dotClass} rounded-full"></span>
+                        ${available} ${available === 1 ? 'Seat' : 'Seats'} Available
+                    </div>
+                `;
+            }
+        }
 
         function updateHeaderUI() {
             const token = authStore.getItem("token");
@@ -410,6 +438,12 @@
             try {
                 const res = await fetch(`/seats?movie_id=${currentMovieId}`);
                 const seats = await res.json();
+                
+                // Set global state
+                localAvailableSeats = seats.filter(s => !s.isbooked).length;
+                localTotalSeats = seats.length;
+                updateAvailabilityDisplay(localAvailableSeats, localTotalSeats);
+
                 seats.sort((a, b) => Number(a.seat_number) - Number(b.seat_number));
                 tbl.innerHTML = ""; 
                 let tr;
@@ -449,11 +483,18 @@
                                     return;
                                 }
                                 const result = await response.json();
-                                if (result.error) {
+                                 if (result.error) {
                                     showToast(result.error, 'error');
                                 } else {
                                     showToast(`Seat ${seatLabel} successfully booked!`, 'success');
-                                    renderSeats(); 
+                                    
+                                    // Manual UI update to prevent full reload/reset
+                                    td.className = `${baseClasses} bg-[#1f1f1f] text-neutral-600 border-0 cursor-not-allowed`;
+                                    td.innerHTML = `<span>${seatLabel}</span>`;
+                                    
+                                    // Update availability counter locally
+                                    localAvailableSeats--;
+                                    updateAvailabilityDisplay(localAvailableSeats, localTotalSeats);
                                 }
                             } catch (err) {
                                 console.error(err);

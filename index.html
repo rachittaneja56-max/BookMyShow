@@ -1,389 +1,525 @@
 <!doctype html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rachit's Cinema </title>
+    <title>Rachit's Cinema | Premium Experience</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap");
-      body {
-        font-family: "Outfit", sans-serif;
-        background-color: #0f172a;
-        color: #f8fafc;
-        overflow-x: hidden;
-      }
-      .glass-card {
-        background: rgba(30, 41, 59, 0.7);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-      }
-      .hidden { display: none; }
-      .fade-in {
-        animation: fadeIn 0.5s ease-in forwards;
-      }
-      @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
+        @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@800;900&display=swap");
+        body {
+            font-family: "Inter", system-ui, sans-serif;
+            background-color: #111111;
+            color: #fafafa;
+            overflow-x: hidden;
+        }
+
+        .hidden { display: none !important; }
+
+        .fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        .app-card {
+            background-color: #1A1A1A;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .screen-glow {
+            background: radial-gradient(
+                ellipse 70% 80% at 50% 100%,
+                rgba(255, 255, 255, 0.15) 0%,
+                rgba(147, 197, 253, 0.08) 45%,
+                transparent 80%
+            );
+        }
+        .movie-logo {
+            font-family: 'Playfair Display', serif;
+            letter-spacing: -0.03em;
+            text-transform: uppercase;
+        }
+        #toast {
+            transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
+        }
+        .toast-hidden { 
+            transform: translate(-50%, 150%); 
+            opacity: 0; 
+            pointer-events: none;
+        }
+        .toast-visible { 
+            transform: translate(-50%, 0); 
+            opacity: 1; 
+            pointer-events: auto;
+        }
+        #bookings-list::-webkit-scrollbar { width: 6px; }
+        #bookings-list::-webkit-scrollbar-track { background: #111111; border-radius: 4px; }
+        #bookings-list::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
     </style>
-  </head>
-  <body class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center p-4">
+</head>
+<body class="min-h-screen bg-[#111111] flex flex-col">
 
-    <div id="auth-view" class="max-w-md w-full glass-card p-8 rounded-3xl fade-in hidden">
-      <h2 id="auth-title" class="text-3xl font-bold text-center mb-6 text-emerald-400">Login</h2>
-      <form id="auth-form" class="space-y-4">
-        <div id="name-field" class="hidden">
-          <label class="block text-slate-300 mb-1">Name</label>
-          <input type="text" id="auth-name" class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500" placeholder="John Doe">
+    <header class="sticky top-0 z-40 w-full border-b border-white/10 bg-[#111111]/95 backdrop-blur-sm">
+        <div class="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="cursor-pointer" onclick="goBack()">
+                <p class="text-[9px] font-bold uppercase tracking-[0.35em] text-neutral-500 mb-0.5">Now Streaming</p>
+                <h1 class="text-xl font-black tracking-tight text-white leading-none">Rachit's Cinema</h1>
+            </div>
+            
+            <div id="header-actions" class="flex items-center gap-3">
+                <button type="button" id="btn-login-trigger" onclick="openAuthModal()" class="text-sm font-semibold px-6 py-2.5
+                 rounded-md bg-[#D92344] text-white hover:bg-[#b01c37] transition-colors hidden">
+                    Sign In
+                </button>
+                <button type="button" id="btn-my-bookings" onclick="fetchMyBookings()" class="text-sm font-medium px-4 py-2
+                 border border-white/10 rounded-md bg-[#1A1A1A] text-neutral-300 hover:text-white transition-colors hidden">
+                    My Bookings
+                </button>
+                <button type="button" id="btn-logout" onclick="handleLogout()" class="text-sm font-medium px-4 py-2 border
+                 border-white/10 rounded-md bg-[#1A1A1A] text-neutral-300 hover:text-white transition-colors hidden">
+                    Logout
+                </button>
+            </div>
         </div>
-        <div>
-          <label class="block text-slate-300 mb-1">Email</label>
-          <input type="email" id="auth-email" required class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500" placeholder="john@example.com">
+    </header>
+
+    <main class="flex-1 w-full max-w-6xl mx-auto px-6 py-10 pb-24">
+        <div id="selection-view" class="w-full fade-in">
+            <div class="mb-10 text-center md:text-left">
+                <h2 class="text-3xl font-bold tracking-tight text-white mb-2">Select a movie</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div onclick="initTheater(1, 'Avengers: Endgame', 'Whatever it takes!', 'Robert Downey Jr., Chris Evans',
+                 'U/A, IMAX 2D, Action, Sci-Fi')" 
+                     class="app-card group cursor-pointer rounded-xl overflow-hidden hover:border-[#D92344]/50 transition-all duration-300">
+                    <div class="h-64 w-full bg-gradient-to-br from-[#181818] via-[#111111] to-[#050505] flex items-center justify-center
+                     relative border-b border-white/5">
+                        <span class="movie-logo text-5xl md:text-7xl text-center relative z-10 leading-none text-white/90 group-hover:scale-105
+                         transition-transform duration-500">
+                            AVENGERS<br>
+                            <span class="text-sm tracking-[0.5em] font-sans font-light opacity-50 block mt-3">ENDGAME</span>
+                        </span>
+                    </div>
+                    <div class="p-6 md:p-8">
+                        <h3 class="text-2xl font-bold mb-2 text-white">Avengers Endgame</h3>
+                        <p class="text-sm text-neutral-400 mb-5">The epic conclusion to the Infinity Saga.</p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2.5 py-1 bg-white/10 rounded text-[10px] font-bold uppercase tracking-wider text-neutral-300">U/A</span>
+                            <span class="px-2.5 py-1 bg-white/10 rounded text-[10px] font-bold uppercase tracking-wider text-neutral-300">IMAX 2D</span>
+                            <span class="px-2.5 py-1 bg-white/10 rounded text-[10px] font-bold uppercase tracking-wider text-neutral-300">Action</span>
+                        </div>
+                        <p class="text-xs text-neutral-500 font-medium">Starring: Robert Downey Jr., Chris Evans</p>
+                    </div>
+                </div>
+
+                <div onclick="initTheater(2, 'Dhurandhar', 'Peak desi action like never before.', 'Ensemble cast', 'U/A, IMAX 2D, Action, Thriller')" 
+                     class="app-card group cursor-pointer rounded-xl overflow-hidden hover:border-[#D92344]/50 transition-all duration-300">
+                    <div class="h-64 w-full bg-gradient-to-br from-[#181818] via-[#111111] to-[#050505] flex items-center justify-center
+                     relative border-b border-white/5">
+                        <span class="movie-logo text-5xl md:text-7xl text-center relative z-10 leading-none text-white/90 group-hover:scale-105
+                         transition-transform duration-500">
+                            DHURANDHAR
+                        </span>
+                    </div>
+                    <div class="p-6 md:p-8">
+                        <h3 class="text-2xl font-bold mb-2 text-white">Dhurandhar</h3>
+                        <p class="text-sm text-neutral-400 mb-5">Jassi ko ghar ki yaad kyu nhi aai?</p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <span class="px-2.5 py-1 bg-white/10 rounded text-[10px] font-bold uppercase tracking-wider text-neutral-300">U/A</span>
+                            <span class="px-2.5 py-1 bg-white/10 rounded text-[10px] font-bold uppercase tracking-wider text-neutral-300">IMAX 2D</span>
+                            <span class="px-2.5 py-1 bg-white/10 rounded text-[10px] font-bold uppercase tracking-wider text-neutral-300">Action</span>
+                        </div>
+                        <p class="text-xs text-neutral-500 font-medium">Starring: Akshay Khanna,Arjun Rampal and Sanjay Dutt</p>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div>
-          <label class="block text-slate-300 mb-1">Password</label>
-          <input type="password" id="auth-password" required class="w-full bg-slate-900/50 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-emerald-500" placeholder="••••••••">
+        <div id="theater-view" class="hidden fade-in w-full">
+            <div class="flex flex-col md:flex-row gap-6 md:gap-10 mb-12 items-center md:items-end bg-[#1A1A1A] border border-white/10 p-6 md:p-10
+             rounded-xl relative overflow-hidden">
+                <div class="absolute inset-0 bg-gradient-to-r from-[#D92344]/5 to-transparent pointer-events-none"></div>
+                <div class="w-32 h-48 bg-gradient-to-b from-[#222] to-black rounded-lg flex-shrink-0 flex items-center
+                 justify-center border border-white/10 shadow-2xl relative z-10">
+                    <span id="mini-logo" class="movie-logo text-2xl text-center text-white/70 transform -rotate-90
+                     whitespace-nowrap tracking-widest px-4"></span>
+                </div>
+                
+                <div class="flex-1 text-center md:text-left relative z-10">
+                    <div class="flex flex-wrap justify-center md:justify-start gap-2 mb-4" id="display-tags">
+                        </div>
+                    <h2 id="display-title" class="text-4xl md:text-5xl font-black tracking-tight text-white mb-3 leading-tight"></h2>
+                    <p id="display-desc" class="text-neutral-400 text-sm md:text-base max-w-2xl"></p>
+                </div>
+            </div>
+
+            <div class="app-card rounded-xl p-6 md:p-12 border border-white/5 bg-[#141414]">
+                
+                <div class="relative w-full max-w-2xl mx-auto mb-16 mt-4">
+                    <div class="absolute inset-x-0 bottom-0 h-40 screen-glow pointer-events-none -z-0 rounded-t-[100%]"></div>
+                    <svg class="w-full text-neutral-700 relative z-10" viewBox="0 0 480 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 35C120 10 360 10 460 35" stroke="currentColor" stroke-width="4" stroke-linecap="round" />
+                    </svg>
+                    <p class="text-center text-[10px] font-bold uppercase tracking-[0.4em] text-neutral-500 mt-4 relative z-10">All eyes this way please</p>
+                </div>
+
+                <div class="overflow-x-auto pb-6 px-2">
+                    <table id="tbl" class="mx-auto border-separate border-spacing-2 md:border-spacing-3 relative z-10"></table>
+                </div>
+
+                <div class="mt-8 flex justify-center gap-6 md:gap-10 text-xs font-bold uppercase tracking-widest text-neutral-500 border-t border-white/5 pt-8">
+                    <div class="flex items-center gap-2.5"><span class="w-4 h-4 border border-neutral-600 rounded-sm"></span> Available</div>
+                    <div class="flex items-center gap-2.5"><span class="w-4 h-4 bg-neutral-800 rounded-sm"></span> Booked</div>
+                    <div class="flex items-center gap-2.5"><span class="w-4 h-4 bg-[#D92344] rounded-sm shadow-[0_0_8px_rgba(217,35,68,0.4)]"></span> Selected</div>
+                </div>
+            </div>
         </div>
-        <button type="submit" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-lg transition shadow-lg hover:shadow-emerald-500/20">
-          Submit
-        </button>
-      </form>
-      <div class="mt-4 text-center">
-        <button type="button" onclick="toggleAuthMode()" class="text-slate-400 hover:text-white transition text-sm">
-          Need an account? <span id="auth-toggle-text" class="text-cyan-400 underline">Register</span>
-        </button>
-        <div id="auth-error" class="text-rose-400 text-sm mt-3 hidden"></div>
-      </div>
+    </main>
+
+    <div id="auth-overlay" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div id="auth-view" class="max-w-md w-full app-card p-8 md:p-10 rounded-xl relative shadow-2xl fade-in">
+            <button type="button" onclick="closeAuthModal()" class="absolute top-5 right-5 text-neutral-500 hover:text-white transition-colors p-2" aria-label="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            
+            <div class="flex border-b border-white/10 mb-8 w-full" role="tablist">
+                <button type="button" id="auth-tab-signin" class="flex-1 pb-3 text-xs font-bold uppercase tracking-widest border-b-2 border-[#D92344] text-white transition-all focus:outline-none">
+                    Sign In
+                </button>
+                <button type="button" id="auth-tab-register" class="flex-1 pb-3 text-xs font-bold uppercase tracking-widest border-b-2 border-transparent text-neutral-500 transition-all focus:outline-none">
+                    Create Account
+                </button>
+            </div>
+
+            <form id="auth-form" class="space-y-5">
+                <div id="name-field" class="hidden">
+                    <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1.5">Name</label>
+                    <input type="text" id="auth-name" class="w-full bg-[#111111] border border-white/10 rounded-md px-4 py-3
+                     text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:ring-1 focus:ring-[#D92344] focus:border-[#D92344] transition-all" placeholder="Rachit">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1.5">Email</label>
+                    <input type="email" id="auth-email" required class="w-full bg-[#111111] border border-white/10 rounded-md px-4
+                     py-3 text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:ring-1 focus:ring-[#D92344] focus:border-[#D92344] transition-all" placeholder="rachit@chaicode.com">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1.5">Password</label>
+                    <input type="password" id="auth-password" required class="w-full bg-[#111111] border border-white/10 rounded-md px-4 py-3
+                     text-white text-sm placeholder:text-neutral-600 focus:outline-none focus:ring-1 focus:ring-[#D92344] focus:border-[#D92344]
+                     transition-all" placeholder="Enter password">
+                </div>
+                <button type="submit" class="w-full bg-[#D92344] hover:bg-[#b01c37] text-white font-bold py-3.5 rounded-md transition-colors
+                 text-sm uppercase tracking-widest mt-4">
+                    Continue
+                </button>
+                <div id="auth-error" class="text-rose-400 text-xs text-center font-medium hidden pt-3"></div>
+            </form>
+        </div>
     </div>
 
-    <div id="selection-view" class="max-w-4xl w-full text-center fade-in hidden">
-      <div class="flex justify-end mb-4 gap-4">
-        <button onclick="fetchMyBookings()" class="text-slate-400 hover:text-cyan-400 transition text-sm px-4 py-2 border border-slate-700 rounded-lg hover:border-cyan-500/50">
-          My Bookings
-        </button>
-        <button onclick="handleLogout()" class="text-slate-400 hover:text-rose-400 transition text-sm px-4 py-2 border border-slate-700 rounded-lg hover:border-rose-500/50">
-          Logout
-        </button>
-      </div>
-      <h1 class="text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
-        Rachit's Cinema
-      </h1>
-      <p class="text-slate-400 text-xl mb-12">Select a movie to book your seats</p>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div onclick="initTheater(1, 'Avengers: Endgame', 'Whatever it takes!')" 
-             class="glass-card p-8 rounded-3xl cursor-pointer hover:border-emerald-500/50 transition-all group hover:-translate-y-2">
-          <div class="h-48 w-full bg-blue-900/30 rounded-2xl mb-6 flex items-center justify-center border border-blue-500/20">
-             <span class="text-6xl group-hover:scale-110 transition-transform">🛡️</span>
-          </div>
-          <h2 class="text-2xl font-bold text-white mb-2">Avengers Endgame</h2>
-          <p class="text-slate-400">The epic conclusion to the Infinity Saga.</p>
+    <div id="bookings-modal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="app-card max-w-lg w-full p-8 md:p-10 rounded-xl relative max-h-[85vh] flex flex-col shadow-2xl fade-in">
+            <div class="flex justify-between items-center mb-8 border-b border-white/10 pb-5">
+                <h2 class="text-2xl font-bold text-white tracking-tight">My Bookings</h2>
+                <button type="button" onclick="closeBookings()" class="text-neutral-500 hover:text-white transition-colors p-1" aria-label="Close">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div id="bookings-list" class="flex-1 overflow-y-auto space-y-3 pr-2"></div>
         </div>
-
-        <div onclick="initTheater(2, 'Dhurandhar The Revenge', 'Jassi ko ghar ki yaad kyu nhi aai?')" 
-             class="glass-card p-8 rounded-3xl cursor-pointer hover:border-rose-500/50 transition-all group hover:-translate-y-2">
-          <div class="h-48 w-full bg-rose-900/30 rounded-2xl mb-6 flex items-center justify-center border border-rose-500/20">
-             <span class="text-6xl group-hover:scale-110 transition-transform">🔥</span>
-          </div>
-          <h2 class="text-2xl font-bold text-white mb-2">Dhurandhar</h2>
-          <p class="text-slate-400">Peak desi action like never before.</p>
-        </div>
-      </div>
     </div>
 
-    <div id="theater-view" class="max-w-7xl w-full hidden">
-      <div class="glass-card rounded-3xl shadow-2xl p-8 md:p-12">
-        
-        <div class="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
-          <button onclick="goBack()" class="text-slate-400 hover:text-white transition flex items-center gap-2">
-            ← Change Movie
-          </button>
-          <div class="text-center w-full max-w-4xl mx-auto">
-            <div class="inline-flex items-center gap-2 px-6 py-2 rounded-full border border-emerald-500/30 bg-emerald-900/20 text-emerald-400 font-semibold tracking-wide mb-6">
-              <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
-              NOW SHOWING
-            </div>
-            <h2 id="display-title" class="text-4xl md:text-7xl font-extrabold text-cyan-400 leading-tight drop-shadow-[0_0_24px_rgba(34,211,238,0.25)]"></h2>
-            <p id="display-desc" class="text-slate-400 italic text-lg md:text-4 mt-3"></p>
-            <p id="display-meta" class="text-slate-500 mt-6 text-base md:text-2 flex flex-wrap justify-center gap-4 md:gap-6"></p>
-          </div>
-          <div class="w-24"></div> </div>
-
-        <div class="flex justify-center mb-10">
-          <div class="bg-slate-900/50 rounded-full px-6 py-3 border border-slate-700 flex gap-8 items-center text-sm md:text-base">
-            <div class="flex items-center gap-2">
-              <div class="w-4 h-4 rounded-full bg-emerald-500"></div>
-              <span class="text-slate-300">Available</span>
-            </div>
-            <div class="w-px h-6 bg-slate-700"></div>
-            <div class="flex items-center gap-2">
-              <div class="w-4 h-4 rounded-full bg-rose-500/20 border border-rose-500/50"></div>
-              <span class="text-slate-400">Booked</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="w-full h-2 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent mb-16 rounded-full shadow-[0_10px_20px_rgba(34,211,238,0.2)]">
-          <p class="text-center text-[10px] tracking-[0.5em] text-cyan-500/50 mt-4 uppercase">Cinema Screen This Way</p>
-        </div>
-
-        <div class="overflow-x-auto pb-4 pt-12">
-          <table id="tbl" class="border-separate border-spacing-3 md:border-spacing-4 mx-auto"></table>
-        </div>
-      </div>
-    </div>
-
-
-    <div id="bookings-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-      <div class="glass-card max-w-lg w-full p-8 rounded-3xl fade-in relative">
-        <button onclick="closeBookings()" class="absolute top-6 right-6 text-slate-400 hover:text-white pb-2 text-2xl leading-none">&times;</button>
-        <h2 class="text-3xl font-bold mb-6 text-cyan-400">My Bookings</h2>
-        <div id="bookings-list" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-        </div>
-      </div>
+    <div id="toast" role="status" aria-live="polite" class="fixed bottom-8 left-1/2 z-[100] px-6 py-3.5 rounded-md text-sm font-bold tracking-wide border toast-hidden shadow-2xl flex items-center gap-3">
+        <span id="toast-icon"></span>
+        <span id="toast-msg"></span>
     </div>
 
     <script>
-      let currentMovieId = null;
-      let isLoginMode = true;
-      const authStore = window.sessionStorage;
+        let currentMovieId = null;
+        let isLoginMode = true;
+        const authStore = window.sessionStorage;
+        let toastHideTimer = null;
 
-      document.addEventListener('DOMContentLoaded', () => {
-        const token = authStore.getItem("token");
-        if (token) {
-          document.getElementById('selection-view').classList.remove('hidden');
-        } else {
-          document.getElementById('auth-view').classList.remove('hidden');
-        }
-      });
+        function updateHeaderUI() {
+            const token = authStore.getItem("token");
+            const btnLogin = document.getElementById('btn-login-trigger');
+            const btnMyBookings = document.getElementById('btn-my-bookings');
+            const btnLogout = document.getElementById('btn-logout');
 
-      function handleLogout() {
-      authStore.removeItem("token");
-      authStore.removeItem("username");
-      authStore.removeItem("user");
-      window.location.reload();
-    }
-
-    async function fetchMyBookings() {
-      const token = authStore.getItem("token");
-      const list = document.getElementById("bookings-list");
-      list.innerHTML = '<p class="text-slate-400">Loading...</p>';
-      
-      const modal = document.getElementById('bookings-modal');
-      modal.classList.remove('hidden');
-
-      try {
-        const res = await fetch('/api/my-bookings', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (res.status === 401 || res.status === 403) {
-          alert("Session expired.");
-          handleLogout();
-          return;
-        }
-        
-        const seats = await res.json();
-        
-        if (seats.length === 0) {
-          list.innerHTML = '<p class="text-slate-400 text-center py-8">No tickets booked yet.</p>';
-          return;
-        }
-        
-        list.innerHTML = seats.map(s => `
-          <div class="bg-slate-900/50 border border-slate-700 p-4 rounded-xl flex justify-between items-center group hover:border-cyan-500/50 transition">
-            <div>
-              <h3 class="text-white font-bold text-lg">${s.title}</h3>
-              <p class="text-emerald-400 text-sm">Seat ${s.seat_number}</p>
-            </div>
-            <div class="h-10 w-10 flex-shrink-0 rounded-full bg-cyan-900/30 border border-cyan-500/20 flex items-center justify-center group-hover:scale-110 transition text-lg">
-              🎫
-            </div>
-          </div>
-        `).join("");
-      } catch (err) {
-        list.innerHTML = '<p class="text-rose-400">Failed to load bookings.</p>';
-      }
-    }
-
-    function closeBookings() {
-      document.getElementById('bookings-modal').classList.add('hidden');
-    }
-
-      function toggleAuthMode() {
-        isLoginMode = !isLoginMode;
-        document.getElementById('auth-title').innerText = isLoginMode ? "Login" : "Register";
-        document.getElementById('auth-toggle-text').innerText = isLoginMode ? "Register" : "Login";
-        
-        const nameField = document.getElementById('name-field');
-        const nameInput = document.getElementById('auth-name');
-        const errDiv = document.getElementById('auth-error');
-        
-        errDiv.classList.add('hidden');
-        errDiv.classList.remove('text-emerald-400');
-        errDiv.classList.add('text-rose-400');
-
-        if (isLoginMode) {
-          nameField.classList.add('hidden');
-          nameInput.removeAttribute('required');
-        } else {
-          nameField.classList.remove('hidden');
-          nameInput.setAttribute('required', 'true');
-        }
-
-        document.getElementById('auth-name').value = '';
-        document.getElementById('auth-email').value = '';
-        document.getElementById('auth-password').value = '';
-      }
-
-      document.getElementById('auth-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const errDiv = document.getElementById('auth-error');
-        errDiv.classList.add('hidden');
-        errDiv.classList.remove('text-emerald-400');
-        errDiv.classList.add('text-rose-400');
-        
-        const email = document.getElementById('auth-email').value;
-        const password = document.getElementById('auth-password').value;
-        const name = document.getElementById('auth-name').value;
-
-        const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/register';
-        const body = isLoginMode ? { email, password } : { name, email, password };
-
-        try {
-          const res = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body)
-          });
-          const data = await res.json();
-          const payload = data?.data || {};
-          
-          if (!res.ok) {
-            errDiv.innerText = data.message || data.error || 'Authentication failed';
-            errDiv.classList.remove('hidden');
-            return;
-          }
-
-          if (!payload?.token || !payload?.user) {
-            errDiv.innerText = 'Invalid authentication response.';
-            errDiv.classList.remove('hidden');
-            return;
-          }
-
-          authStore.setItem("token", payload.token);
-          authStore.setItem("username", payload.user.name);
-          authStore.setItem("user", JSON.stringify(payload.user));
-          document.getElementById('auth-view').classList.add('hidden');
-          document.getElementById('selection-view').classList.remove('hidden');
-        } catch (err) {
-          errDiv.innerText = 'Network error. Please try again.';
-          errDiv.classList.remove('hidden');
-        }
-      });
-
-      function initTheater(id, title, desc) {
-        currentMovieId = id;
-        const movieMeta = {
-          1: { rating: "8.6", genre: "Sci-Fi / Action", duration: "3h 1m", time: "8:30 PM" },
-          2: { rating: "8.4", genre: "Action / Thriller", duration: "2h 35m", time: "7:00 PM" },
-        };
-        const meta = movieMeta[id] || { rating: "8.0", genre: "Drama", duration: "2h", time: "9:00 PM" };
-        
-    
-        document.getElementById('display-title').innerText = title;
-        document.getElementById('display-desc').innerText = desc;
-        document.getElementById('display-meta').innerText = `★ ${meta.rating}  •  ${meta.genre}  •  ${meta.duration}  •  ${meta.time}`;
-        
-        document.getElementById('selection-view').classList.add('hidden');
-        document.getElementById('theater-view').classList.remove('hidden');
-        document.getElementById('theater-view').classList.add('fade-in');
-
-        renderSeats();
-      }
-
-      function goBack() {
-        document.getElementById('selection-view').classList.remove('hidden');
-        document.getElementById('theater-view').classList.add('hidden');
-        document.getElementById('tbl').innerHTML = ""; 
-      }
-
-      async function renderSeats() {
-        const tbl = document.getElementById("tbl");
-        tbl.innerHTML = "<tr><td class='text-slate-400'>Loading theater...</td></tr>";
-
-        try {
-          const res = await fetch(`/seats?movie_id=${currentMovieId}`);
-          const seats = await res.json();
-          seats.sort((a, b) => Number(a.seat_number) - Number(b.seat_number));
-          
-          tbl.innerHTML = ""; 
-          let tr;
-
-          seats.forEach((seat, index) => {
-            if (index % 8 === 0) {
-              tr = document.createElement("tr");
-              tbl.appendChild(tr);
-            }
-
-            const td = document.createElement("td");
-            const baseClasses = "w-16 h-16 md:w-24 md:h-24 rounded-xl md:rounded-2xl text-center align-middle text-lg md:text-xl font-bold transition-all duration-300 select-none relative group";
-            const seatLabel = seat.seat_number || (index + 1);
-
-            if (seat.isbooked) {
-              td.className = `${baseClasses} bg-rose-500/10 text-rose-500/40 border border-rose-500/20 cursor-not-allowed`;
-              td.innerHTML = `
-                <span>${seatLabel}</span>
-                <div class="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-3 py-1 bg-slate-800 shadow-2xl border border-slate-600 text-xs text-slate-200 rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-[100]">
-                  🎟️ Booked by: ${seat.name && seat.name.trim() !== '' ? seat.name : 'Anonymous'}
-                </div>
-              `;
+            if (token) {
+                btnLogin.classList.add('hidden');
+                btnMyBookings.classList.remove('hidden');
+                btnLogout.classList.remove('hidden');
             } else {
-              td.className = `${baseClasses} bg-emerald-500/80 text-white border-2 border-emerald-400 cursor-pointer hover:bg-emerald-400 hover:-translate-y-1 shadow-lg hover:shadow-emerald-500/20`;
-              td.innerHTML = `<span>${seatLabel}</span>`;
-              
-              td.addEventListener("click", async () => {
-                const token = authStore.getItem("token");
-                const username = authStore.getItem("username");
-                if (!token || !username) {
-                  handleLogout();
-                  return;
-                }
+                btnLogin.classList.remove('hidden');
+                btnMyBookings.classList.add('hidden');
+                btnLogout.classList.add('hidden');
+            }
+        }
 
-                try {
-                  const response = await fetch(`/${seat.id}/${encodeURIComponent(username)}`, { 
-                    method: 'PUT',
+        function showToast(message, type = 'error') {
+            const el = document.getElementById('toast');
+            const msgEl = document.getElementById('toast-msg');
+            const iconEl = document.getElementById('toast-icon');
+            
+            msgEl.textContent = message;
+            el.classList.remove('bg-[#2c0b12]', 'border-rose-500/30', 'text-rose-200', 'bg-[#062417]', 'border-emerald-500/30', 'text-emerald-200');
+            
+            if (type === 'success') {
+                el.classList.add('bg-[#062417]', 'border-emerald-500/30', 'text-emerald-200');
+                iconEl.innerHTML = '<svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>';
+            } else {
+                el.classList.add('bg-[#2c0b12]', 'border-rose-500/30', 'text-rose-200');
+                iconEl.innerHTML = '<svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>';
+            }
+            
+            el.classList.remove('toast-hidden');
+            el.classList.add('toast-visible');
+            
+            clearTimeout(toastHideTimer);
+            toastHideTimer = setTimeout(() => {
+                el.classList.remove('toast-visible');
+                el.classList.add('toast-hidden');
+            }, 3000);
+        }
+
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateHeaderUI();
+            applyAuthTabStyles();
+            document.getElementById('auth-tab-signin').addEventListener('click', () => {
+                if (!isLoginMode) {
+                    isLoginMode = true;
+                    applyAuthTabStyles();
+                    applyAuthFieldVisibility();
+                    clearAuthErrors();
+                }
+            });
+            document.getElementById('auth-tab-register').addEventListener('click', () => {
+                if (isLoginMode) {
+                    isLoginMode = false;
+                    applyAuthTabStyles();
+                    applyAuthFieldVisibility();
+                    clearAuthErrors();
+                }
+            });
+        });
+        function openAuthModal() {
+            document.getElementById('auth-overlay').classList.remove('hidden');
+        }
+        function closeAuthModal() {
+            document.getElementById('auth-overlay').classList.add('hidden');
+            document.getElementById('auth-password').value = '';
+            clearAuthErrors();
+        }
+        function clearAuthErrors() {
+            document.getElementById('auth-error').classList.add('hidden');
+        }
+        function applyAuthTabStyles() {
+            const signInTab = document.getElementById('auth-tab-signin');
+            const registerTab = document.getElementById('auth-tab-register');
+            if (isLoginMode) {
+                signInTab.classList.replace('border-transparent', 'border-[#D92344]');
+                signInTab.classList.replace('text-neutral-500', 'text-white');
+                registerTab.classList.replace('border-[#D92344]', 'border-transparent');
+                registerTab.classList.replace('text-white', 'text-neutral-500');
+            } else {
+                registerTab.classList.replace('border-transparent', 'border-[#D92344]');
+                registerTab.classList.replace('text-neutral-500', 'text-white');
+                signInTab.classList.replace('border-[#D92344]', 'border-transparent');
+                signInTab.classList.replace('text-white', 'text-neutral-500');
+            }
+        }
+        function applyAuthFieldVisibility() {
+            const nameField = document.getElementById('name-field');
+            const nameInput = document.getElementById('auth-name');
+            if (isLoginMode) {
+                nameField.classList.add('hidden');
+                nameInput.removeAttribute('required');
+            } else {
+                nameField.classList.remove('hidden');
+                nameInput.setAttribute('required', 'true');
+            }
+        }
+        document.getElementById('auth-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const errDiv = document.getElementById('auth-error');
+            clearAuthErrors();   
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const name = document.getElementById('auth-name').value;
+            const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/register';
+            const body = isLoginMode ? { email, password } : { name, email, password };
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                const payload = data?.data || {};               
+                if (!res.ok || !payload?.token) {
+                    errDiv.innerText = data.message || data.error || 'Authentication failed. Please check your credentials.';
+                    errDiv.classList.remove('hidden');
+                    return;
+                }
+                authStore.setItem("token", payload.token);
+                authStore.setItem("username", payload.user.name);
+                authStore.setItem("user", JSON.stringify(payload.user));               
+                closeAuthModal();
+                updateHeaderUI();
+                showToast(`Welcome to Rachit's Cinema, ${payload.user.name}!`, 'success');          
+            } catch (err) {
+                errDiv.innerText = 'Network connection error. Please try again.';
+                errDiv.classList.remove('hidden');
+            }
+        });
+        function handleLogout() {
+            authStore.removeItem("token");
+            authStore.removeItem("username");
+            authStore.removeItem("user");
+            updateHeaderUI();
+            goBack(); 
+            showToast('You have been safely logged out.', 'success');
+        }
+        function initTheater(id, title, desc, cast, tagsStr) {
+            currentMovieId = id;
+            document.getElementById('display-title').innerText = title;
+            document.getElementById('display-desc').innerText = desc;
+            let shortTitle = title.includes(':') ? title.split(':')[0] : title;
+            document.getElementById('mini-logo').innerText = shortTitle;
+            const tagsArr = tagsStr.split(',').map(t => t.trim());
+            const tagsHtml = tagsArr.map(t => `<span class="px-2.5 py-1 bg-[#D92344]/10 border border-[#D92344]/20 rounded text-[10px] font-bold text-[#D92344] uppercase tracking-wider">${t}</span>`).join('');
+            document.getElementById('display-tags').innerHTML = tagsHtml;
+            document.getElementById('selection-view').classList.add('hidden');
+            document.getElementById('theater-view').classList.remove('hidden');
+            renderSeats();
+        }
+        function goBack() {
+            document.getElementById('selection-view').classList.remove('hidden');
+            document.getElementById('theater-view').classList.add('hidden');
+            document.getElementById('tbl').innerHTML = ""; 
+        }
+        async function renderSeats() {
+            const tbl = document.getElementById("tbl");
+            tbl.innerHTML = "<tr><td colspan='9' class='text-neutral-500 text-sm py-12 text-center tracking-widest uppercase'>Scanning Theater Layout...</td></tr>";
+
+            try {
+                const res = await fetch(`/seats?movie_id=${currentMovieId}`);
+                const seats = await res.json();
+                seats.sort((a, b) => Number(a.seat_number) - Number(b.seat_number));
+                tbl.innerHTML = ""; 
+                let tr;
+                seats.forEach((seat, index) => {
+                    if (index % 8 === 0) {
+                        tr = document.createElement("tr");
+                        tbl.appendChild(tr);
+                        const rowLabelTd = document.createElement("td");
+                        rowLabelTd.className = "pr-3 py-1 text-right text-xs font-bold text-neutral-600 align-middle w-8 select-none border-0";
+                        rowLabelTd.textContent = String.fromCharCode(65 + Math.floor(index / 8));
+                        tr.appendChild(rowLabelTd);
+                    }
+                    const td = document.createElement("td");
+                    const baseClasses = "w-10 h-10 md:w-11 md:h-11 rounded text-center align-middle text-xs font-bold transition-all duration-200 select-none relative";
+                    const seatLabel = seat.seat_number || (index + 1);
+                    if (seat.isbooked) {
+                        td.className = `${baseClasses} bg-[#1f1f1f] text-neutral-600 border-0 cursor-not-allowed`;
+                        td.innerHTML = `<span>${seatLabel}</span>`;
+                    } else {
+                        td.className = `${baseClasses} bg-transparent text-neutral-400 border border-neutral-700 cursor-pointer hover:bg-[#D92344] hover:text-white hover:border-[#D92344] active:scale-95`;
+                        td.innerHTML = `<span>${seatLabel}</span>`;
+                        td.addEventListener("click", async () => {
+                            const token = authStore.getItem("token");
+                            const username = authStore.getItem("username");
+                            if (!token || !username) {
+                                openAuthModal();
+                                return;
+                            }
+                            try {
+                                const response = await fetch(`/${seat.id}/${encodeURIComponent(username)}`, { 
+                                    method: 'PUT',
+                                    headers: { 'Authorization': `Bearer ${token}` }
+                                });
+                                if (response.status === 401 || response.status === 403) {
+                                    showToast('Session expired. Please sign in again.', 'error');
+                                    handleLogout();
+                                    return;
+                                }
+                                const result = await response.json();
+                                if (result.error) {
+                                    showToast(result.error, 'error');
+                                } else {
+                                    showToast(`Seat ${seatLabel} successfully booked!`, 'success');
+                                    renderSeats(); 
+                                }
+                            } catch (err) {
+                                console.error(err);
+                                showToast('Network error while booking. Please try again.', 'error');
+                            }
+                        });
+                    }
+                    tr.appendChild(td);
+                });
+            } catch (err) {
+                console.error(err);
+                tbl.innerHTML = "<tr><td colspan='9' class='text-rose-400 text-sm py-12 text-center'>Unable to connect to theater layout.</td></tr>";
+            }
+        }
+        async function fetchMyBookings() {
+            const token = authStore.getItem("token");
+            const list = document.getElementById("bookings-list");
+            list.innerHTML = '<p class="text-neutral-500 text-sm py-8 text-center uppercase tracking-widest">Loading Tickets...</p>';
+            
+            document.getElementById('bookings-modal').classList.remove('hidden');
+            try {
+                const res = await fetch('/api/my-bookings', {
                     headers: { 'Authorization': `Bearer ${token}` }
-                  });
-                  
-                  if (response.status === 401 || response.status === 403) {
-                    alert("Session expired. Please login again.");
+                });
+                
+                if (res.status === 401 || res.status === 403) {
+                    showToast('Session expired. Please sign in again.', 'error');
+                    closeBookings();
                     handleLogout();
                     return;
-                  }
-
-                  const result = await response.json();
-
-                  if (result.error) {
-                    alert(result.error);
-                  } else {
-                    alert("Ticket Confirmed!");
-                    renderSeats(); 
-                  }
-                } catch (err) {
-                  console.error(err);
-                  alert("Failed to confirm ticket.");
                 }
-              });
+                const seats = await res.json();
+                if (seats.length === 0) {
+                    list.innerHTML = `
+                        <div class="flex flex-col items-center justify-center py-12 text-center border border-white/5 rounded-lg bg-[#141414] mt-2">
+                            <svg class="w-16 h-16 mb-4 text-neutral-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                            </svg>
+                            <p class="text-white font-bold text-lg mb-1">No Tickets Yet</p>
+                            <p class="text-neutral-500 text-sm max-w-[200px]">Grab some popcorn and book a show to see them here.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                list.innerHTML = seats.map(s => `
+                    <div class="bg-[#141414] border border-white/10 p-5 rounded-lg flex justify-between items-center gap-4 hover:border-white/20 transition-colors">
+                        <div class="min-w-0">
+                            <h3 class="text-white font-bold text-lg truncate mb-1.5">${s.title}</h3>
+                            <div class="inline-flex items-center px-2 py-0.5 rounded bg-[#D92344] text-white text-[10px] font-bold uppercase tracking-widest">
+                                Seat ${s.seat_number}
+                            </div>
+                        </div>
+                        <div class="h-12 w-12 flex-shrink-0 rounded-md border border-white/10 bg-[#111] flex items-center justify-center text-white">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                            </svg>
+                        </div>
+                    </div>
+                `).join("");
+            } catch (err) {
+                list.innerHTML = '<p class="text-rose-400 text-sm py-8 text-center">Failed to load bookings. Please try again later.</p>';
             }
-            tr.appendChild(td);
-          });
-        } catch (err) {
-          console.error(err);
-          tbl.innerHTML = "<tr><td class='text-red-400'>Error loading data.</td></tr>";
         }
-      }
+        function closeBookings() {
+            document.getElementById('bookings-modal').classList.add('hidden');
+        }
     </script>
-  </body>
+</body>
 </html>

@@ -1,4 +1,3 @@
-
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
@@ -33,7 +32,7 @@ WHERE NOT EXISTS (SELECT 1 FROM movies WHERE title = 'Dhurandhar');
 INSERT INTO seats (movie_id, seat_number, isbooked, name)
 SELECT m.id, s.n, FALSE, NULL
 FROM movies m
-CROSS JOIN generate_series(1, 24) AS s(n)
+CROSS JOIN generate_series(1, 48) AS s(n)
 WHERE m.title = 'Avengers: Endgame'
   AND NOT EXISTS (
     SELECT 1 FROM seats WHERE movie_id = m.id AND seat_number = s.n
@@ -42,8 +41,17 @@ WHERE m.title = 'Avengers: Endgame'
 INSERT INTO seats (movie_id, seat_number, isbooked, name)
 SELECT m.id, s.n, FALSE, NULL
 FROM movies m
-CROSS JOIN generate_series(1, 24) AS s(n)
+CROSS JOIN generate_series(1, 48) AS s(n)
 WHERE m.title = 'Dhurandhar'
   AND NOT EXISTS (
     SELECT 1 FROM seats WHERE movie_id = m.id AND seat_number = s.n
   );
+
+UPDATE seats
+SET isbooked = FALSE, name = NULL, user_id = NULL
+WHERE movie_id IN (
+    SELECT movie_id
+    FROM seats
+    GROUP BY movie_id
+    HAVING COUNT(*) FILTER (WHERE isbooked = FALSE) = 0
+);

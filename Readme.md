@@ -1,48 +1,166 @@
-# Movie Booking System
+# BookMyShow Clone - Movie Ticket Booking System
 
-This is a simple project I built for a hackathon. It is a movie ticket booking site where you can pick a movie and choose your seats. 
+A robust, concurrent-safe movie ticket booking system featuring a modern dark-themed frontend and a scalable Node.js backend. This project was originally built for a hackathon and handles real-time seat availability, user authentication, and transaction safety.
 
-I took the basic idea and made it better by organizing the code properly and adding features like user accounts and a history of your bookings.
+## 🌟 Features
 
-## Main Features
+- **JWT-Based Authentication:** Secure user registration and login endpoints.
+- **Concurrent Seat Booking:** Employs database row-locking (`FOR UPDATE`) with PostgreSQL transactions to prevent double-booking of seats.
+- **Automatic Self-Healing/Reset:** When all seats for a movie are booked, the system automatically detects this and resets the seats for continuous testing and flow validation.
+- **Booking History Tracking:** Users can view their past booking history (`My Bookings`). The booking history persists even after theater seat resets.
+- **Premium User Interface:** A fully responsive, dark-mode inspired UI using Vanilla CSS and JavaScript, complete with custom toast notifications, auth modals, and seat availability indicators.
 
-- **Accounts and Login:** You can create an account and log in. Your password is encrypted so it is safe.
-- **Booking Tickets:** You must be logged in to book a seat. The system is designed to handle multiple people booking at the same time without any errors.
-- **Theater Reset:** To make it easy to test, the theater seats reset automatically when they are all full. If you fill up the theater and then refresh the page, you will see it is empty and ready for new bookings.
-- **Booking History:** Even when the theater resets, your tickets are not lost. You can always go to the "My Bookings" section to see everything you have booked in the past.
-- **Clean Design:** The site looks modern and works well on both computers and phones.
+## 🏗 System Architecture Flowchart
 
-## How to set this up on your computer
-
-1. Download the code or clone the repository.
-2. Open your terminal in the project folder and run `npm install` to get the necessary files.
-3. You need to have PostgreSQL installed. Create a database called `bookmyshow`.
-4. Create a file named `.env` in the main folder. Copy and paste the following, but use your own database password:
-
-```env
-DATABASE=bookmyshow
-DB_USERNAME=postgres
-DB_PASSWORD=your_password_here
-JWT_SECRET=any_random_words
+```mermaid
+graph TD
+    A[User] -->|Visits Site| B[index.html Frontend]
+    B --> C{Authenticated?}
+    C -- No --> D[Login / Register Modal]
+    D -->|Credentials| E[Auth API Endpoint]
+    E -->|Validates & Returns JWT| B
+    C -- Yes --> F[View Available Seats]
+    F --> G[Select Movie & Seat]
+    G --> H[Click Book]
+    H -->|PUT Request with JWT| I[Booking API Endpoint]
+    I --> J[PostgreSQL Transaction Begins]
+    J --> K{Select Seat FOR UPDATE}
+    K -- Already Booked --> L[Rollback Transaction & Return Error]
+    K -- Available --> M[Update Seat Status & Insert Booking Record]
+    M --> N[Commit Transaction]
+    N --> O[Return Data & Update Frontend status]
 ```
 
-5. Start the server by running `node index.mjs`.
+## 🗄️ Database ER Diagram
 
-Once it starts, it will set up the database for you. You can then go to `http://localhost:8080` in your browser to use the app.
+The database uses PostgreSQL and strictly enforces referential integrity through foreign keys and cascading deletes.
 
-## Project Structure
+```mermaid
+erDiagram
+    USERS {
+        serial id PK
+        text name
+        text email UK
+        text password_hash
+        timestamp created_at
+    }
+    MOVIES {
+        serial id PK
+        text title UK
+    }
+    SEATS {
+        serial id PK
+        integer movie_id FK "REFERENCES movies(id)"
+        integer seat_number
+        boolean isbooked
+        text name
+        integer user_id FK "REFERENCES users(id) nullable"
+    }
+    BOOKINGS {
+        serial id PK
+        integer user_id FK "REFERENCES users(id)"
+        integer movie_id FK "REFERENCES movies(id)"
+        integer seat_number
+        timestamp booked_at
+    }
 
-- `index.mjs`: This is the main file that runs the server.
-- `index.html`: This is the frontend part that you see in the browser.
-- `src/common`: This folder contains shared tools like database settings and security checks.
-- `src/modules/auth`: This folder handles everything related to user accounts like signing up and logging in.
+    USERS ||--o{ BOOKINGS : "has"
+    MOVIES ||--o{ BOOKINGS : "receives"
+    MOVIES ||--o{ SEATS : "contains"
+    USERS ||--o{ SEATS : "books"
+```
 
-## List of API Endpoints
+## ⚙️ Tech Stack
 
-- `GET /`: Shows the website.
-- `GET /seats`: Gets the current list of seats for a movie.
-- `POST /api/auth/register`: Create a new account.
-- `POST /api/auth/login`: Log into an existing account.
-- `PUT /:id/:name`: Book a seat (requires login).
-- `GET /api/my-bookings`: See your own booking history (requires login).
-- `GET /reset`: A way to manually clear all seats and history if needed.
+- **Frontend:** HTML5, Vanilla CSS3, Vanilla JavaScript (Browser Native)
+- **Backend:** Node.js, Express.js
+- **Database:** PostgreSQL
+- **Security:** `jsonwebtoken` (JWT) for stateless auth, `bcryptjs` for password hashing
+- **Validation:** `joi` for DTO validation
+
+## 🚀 Setup & Installation
+
+Follow these steps to run the project locally:
+
+1. **Clone the repository:**
+   ```bash
+   git clone <repository_url>
+   cd BookMyShow
+   ```
+
+2. **Install Dependencies:**
+   ```bash
+   npm install
+   ```
+
+3. **Database Setup:**
+   Ensure PostgreSQL is installed and running on your machine.
+   Create a new database for the application (e.g., `bookmyshow`).
+
+4. **Environment Configuration:**
+   Create a `.env` file in the root directory and configure your PostgreSQL connection:
+   ```env
+   DATABASE=bookmyshow
+   DB_USERNAME=postgres
+   DB_PASSWORD=your_password_here
+   PORT=8080
+   JWT_SECRET=your_super_secret_jwt_key
+   ```
+
+5. **Start the Server:**
+   ```bash
+   npm start
+   ```
+   *Note: Upon starting, the server automatically reads `src/common/init.sql` to initialize all database tables and seed initial movie/seat data.*
+
+6. **Access the App:**
+   Open your browser and navigate to `http://localhost:8080`.
+
+## 📁 Project Structure
+
+```text
+BookMyShow/
+├── .env                        # Environment configuration
+├── index.html                  # Main frontend interface
+├── index.mjs                   # Express server entry point & core APIs
+├── package.json                # Project dependencies
+└── src/
+    ├── common/
+    │   ├── db.js               # DB connection pooling & init logic
+    │   ├── init.sql            # Table schemas and seed queries
+    │   ├── middlewares/        # Auth and Data Validation middlewares
+    │   └── utils/              # Helper utilities (ApiError, ApiResponse)
+    └── modules/
+        └── auth/               # Auth Component (MVC structural layout)
+            ├── auth.controller.js
+            ├── auth.routes.js
+            ├── auth.service.js
+            └── dto/            # Joi validation schemas
+```
+
+## 📡 API Reference
+
+### Public Endpoints
+- `GET /` - Serves the frontend client (`index.html`).
+- `GET /seats?movie_id={id}` - Fetches the current list of seats for the specified movie. Including auto-reset logic if the theater is fully booked.
+- `GET /ping` - Health check route.
+
+### Authentication Endpoints
+- `POST /api/auth/register` - Registers a new user. Expects `name`, `email`, and `password`.
+- `POST /api/auth/login` - Authenticates an existing user and returns a signed JWT.
+
+### Protected Endpoints (Requires `Authorization: Bearer <token>`)
+- `PUT /:id/:name` - Books a specific seat (`:id`) with the passenger's name (`:name`) under the logged-in user context.
+- `GET /api/my-bookings` - Retrieves the booking history for the authenticated user context.
+
+## 🛡️ Concurrency Concept (How transaction handles duplicate booking)
+
+To handle race conditions (multiple users trying to book the same seat at the exact same millisecond):
+1. A Postgres `BEGIN` transaction is started.
+2. The endpoint executes `SELECT * FROM seats WHERE id = $1 AND isbooked = false FOR UPDATE`.
+3. The `FOR UPDATE` applies a row-level lock so that no other transactions can modify this row until the current transaction completes.
+4. If the row is found, it updates the `seats` table and inserts a tracking record into the `bookings` table.
+5. `COMMIT` the transaction. If any error occurs or the seat was already booked by a competing query, `ROLLBACK` is called safely.
+
+---
+*Developed with a focus on scalability, clean UI, and robust backend practices.*
